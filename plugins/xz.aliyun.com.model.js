@@ -1,0 +1,83 @@
+/**
+ * ArticleCrawler::Plugins::[xz.aliyun.com]
+ * Author: Virink < virink @outlook.com >
+ * Create: 2019-11-22
+ * Update: 2019-11-22
+ */
+
+'use strict';
+
+const __NAME__ = 'xz.aliyun.com.model.js'
+const TABLE_PREFIX = 'xz_';
+
+const {
+    Sequelize,
+    sequelize
+} = require("../utils/databasse");
+
+const ArticleModel = sequelize.define(`${TABLE_PREFIX}article`, {
+    id: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        autoIncrement: true,
+        primaryKey: true
+    },
+    nid: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        unique: true
+    },
+    title: {
+        type: Sequelize.STRING(100),
+        allowNull: false
+    },
+    content: {
+        type: Sequelize.TEXT,
+        allowNull: false
+    },
+    author: {
+        type: Sequelize.STRING(50),
+        allowNull: false
+    },
+    nodes: {
+        type: Sequelize.STRING(128),
+        allowNull: false
+    },
+    publish: {
+        type: Sequelize.BIGINT(11),
+        allowNull: false
+    }
+})
+const CommentModel = sequelize.define(`${TABLE_PREFIX}comment`, {
+    id: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        autoIncrement: true,
+        primaryKey: true
+    },
+    nid: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        unique: true
+    },
+    username: {
+        type: Sequelize.STRING(100),
+        allowNull: false
+    },
+    comment: {
+        type: Sequelize.TEXT,
+        allowNull: false
+    },
+    publish: {
+        type: Sequelize.BIGINT(11),
+        allowNull: false
+    }
+})
+
+ArticleModel.sync();
+CommentModel.sync();
+
+module.exports = {
+    ArticleModel,
+    CommentModel
+}
