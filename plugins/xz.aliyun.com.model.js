@@ -32,7 +32,7 @@ const ArticleModel = sequelize.define(`${TABLE_PREFIX}article`, {
         allowNull: false
     },
     content: {
-        type: Sequelize.TEXT,
+        type: Sequelize.TEXT('medium'),
         allowNull: false
     },
     author: {

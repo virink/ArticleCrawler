@@ -26,7 +26,13 @@ var sequelize = new Sequelize(CONFIG.name, CONFIG.user, CONFIG.pass, {
     },
     dialectOptions: {
         timezone: 'Etc/GMT-8',
-        useUTC: false
+        useUTC: false,
+        charset: "utf8mb4",
+        collate: "utf8mb4_bin"
+    },
+    'define': {
+        'underscored': true,
+        'charset': 'utf8mb4'
     },
     timezone: 'Etc/GMT-8',
     benchmark: false,

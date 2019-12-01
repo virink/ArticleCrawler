@@ -16,7 +16,8 @@ const Crawler = require("crawler");
 
 const {
     html2md,
-    date2ts
+    date2ts,
+    mkdir
 } = require('../utils/common');
 const {
     imageCrawler
@@ -26,14 +27,25 @@ const {
     CommentModel
 } = require('./xz.aliyun.com.model')
 
-const mkdir = (path) => {
-    fs.existsSync(path) || fs.mkdirSync(path);
-}
 
 const dataPath = `${__dirname}/../data/xz.aliyun.com/`
 mkdir(dataPath)
 
 var AlreadCrawlIDS = [];
+
+imageCrawler.on('request', function (options) {
+    // console.debug(options)
+    // FIX: 修复古老文章的图片地址
+    if (options.uri.indexOf('xianzhi.aliyun.com/forum/media') != -1) {
+        options.uri = options.uri.replace('xianzhi.aliyun.com/forum/media', 'xzfile.aliyuncs.com/media')
+    }
+    // Proxy
+    if (options.uri.indexOf('i.imgur.com') != -1 ||
+        options.uri.indexOf('i.loli.net') != -1 ||
+        options.uri.indexOf('s2.ax1x.com') != -1) {
+        options.proxy = "http://127.0.0.1:1086";
+    }
+});
 
 // Get Page
 var crawlPage = new Crawler({
@@ -54,18 +66,27 @@ var crawlPage = new Crawler({
             }).toArray().join();
             data.content = $("div.markdown-body").html();
             data.content = html2md(data.content);
-            // Parse and Replace Image Url
+            // Parse and Download Image
             mkdir(path.join(dataPath, data.nid))
             $("div.markdown-body img").each((_, ele) => {
                 try {
                     var src = $(ele).attr("src");
                     if (src) {
+                        if (src.indexOf('?') > 0) {
+                            src = src.split('?')[0]
+                        }
                         var name = path.basename(src)
-                        imageCrawler.queue({
-                            uri: src,
-                            filename: path.join(dataPath, data.nid, name)
-                        })
-                        data.content = data.content.replace(src, path.join('data/xz.aliyun.com', data.nid, name))
+                        var imgDst = path.join(dataPath, data.nid, name)
+                        // FIX: 修复古老文章的图片地址
+                        imgDst = imgDst.replace('xianzhi.aliyun.com/forum/media', 'xzfile.aliyuncs.com/media')
+                        data.content = data.content.replace('xianzhi.aliyun.com/forum/media', 'xianzhi.aliyun.com/media')
+                        if (!fs.existsSync(imgDst)) {
+                            imageCrawler.queue({
+                                uri: src,
+                                filename: imgDst,
+                                isPic: true
+                            })
+                        }
                     }
                 } catch (e) {
                     console.error('[-] Crawl ', res.request.uri.href)
@@ -79,7 +100,7 @@ var crawlPage = new Crawler({
             (async (data) => {
                 try {
                     await ArticleModel.create(data);
-                    console.error('[+] Crawled successfully ', res.request.uri.href)
+                    console.error('[+] Crawled OK ', res.request.uri.href, data.title)
                 } catch (e) {
                     console.error('[+] Insert error', e.toString())
                 }
@@ -123,16 +144,36 @@ var crawlList = new Crawler({
     }
 });
 
-const StartTask = () => {
+const StartTask = (url = 'https://xz.aliyun.com/') => {
     (async () => {
-        const nids = await ArticleModel.findAll({
-            attributes: ['nid'],
+        // const nids = await ArticleModel.findAll({
+        //     attributes: ['nid'],
+        //     raw: true
+        // });
+        // AlreadCrawlIDS = nids.map((e) => {
+        //     return e.nid
+        // })
+
+        crawlList.queue(url)
+    })();
+}
+
+const FixAndDownloadImage = () => {
+    (async () => {
+        // Get All Contents and Nid
+        const articles = await ArticleModel.findAll({
+            attributes: ['nid', 'content'],
             raw: true
         });
-        AlreadCrawlIDS = nids.map((e) => {
-            return e.nid
-        })
-        crawlList.queue('https://xz.aliyun.com/')
+        // articles[0]
+        // Grep image url
+        // articles.map((e) => {
+        //     var nid = e.nid;
+        //     var content = e.content;
+
+        // })
+
+        // crawlList.queue(url)
     })();
 }
 
@@ -142,7 +183,12 @@ if (require('../utils/debug').PLUGIN_DEBUG(__NAME__)) {
     // crawlPage.queue('https://xz.aliyun.com/t/6746')
     // crawlList.queue('https://xz.aliyun.com/?page=120')
 
-    StartTask()
+    StartTask('https://xz.aliyun.com/?page=1')
+    // imageCrawler.queue({
+    //     uri: 'https://xzfile.aliyuncs.com/media/upload/picture/20190528114412-db4952ea-80fa-1.png',
+    //     filename: path.join(dataPath, 'test', '20190528114412-db4952ea-80fa-1.png'),
+    //     isPic: true
+    // })
 }
 
 module.exports = {

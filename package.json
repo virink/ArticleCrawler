@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "A crawler for lots of articles",
   "main": "index.js",
-  "repository": "http://github.com/virink/ArticleCrawler",
+  "repository": " ",
   "author": "Virink",
   "license": "MIT",
   "private": false,

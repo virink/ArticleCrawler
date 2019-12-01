@@ -25,7 +25,13 @@ const date2ts = (date) => {
     return new Date(date).getTime();
 }
 
+// 创建不存在的文件夹
+const mkdir = (path) => {
+    fs.existsSync(path) || fs.mkdirSync(path);
+}
+
 module.exports = {
     html2md,
-    date2ts
+    date2ts,
+    mkdir
 }

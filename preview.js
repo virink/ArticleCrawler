@@ -56,12 +56,17 @@ router.get('/:site/:nid', async (ctx, next) => {
     var nid = ctx.params.nid
     if (site == 'xz.aliyun.com') {
         const xz = require(`./plugins/${site}.model`)
-        const article = await xz.ArticleModel.findOne({
+        var article = await xz.ArticleModel.findOne({
             where: {
                 nid: nid
             },
             raw: true
         });
+        // https://xzfile.aliyuncs.com/media/upload/picture
+        // var article = articleRes.toArray()
+        // article.content = article.content.replace(src, path.join('/data/xz.aliyun.com', article.nid, name))
+        article.content = article.content.replace(new RegExp('https://xzfile.aliyuncs.com/media/upload/picture', 'g'), path.join('/data/xz.aliyun.com', article.nid.toString()));
+        // article.content = article.content.replace('/https://xzfile.aliyuncs.com/media/upload/picture/g', path.join('/data/xz.aliyun.com', article.nid.toString()))
         await ctx.render('article', {
             title: '先知社区',
             article: article

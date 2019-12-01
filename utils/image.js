@@ -7,7 +7,6 @@
 
 'use strict';
 
-const path = require('path');
 const fs = require('fs');
 const Crawler = require("crawler");
 
@@ -17,18 +16,17 @@ var imageCrawler = new Crawler({
     rotateUA: true,
     callback: function (err, res, done) {
         if (err) {
-            console.error(err.stack);
+            console.error(err.toString());
         } else {
-            var fn = res.options.filename;
-            var writeStream = fs.createWriteStream(fn);
-            writeStream.on('error', (err) => {
-                console.error('[-] Crawl image error:', err);
+            var ws = fs.createWriteStream(res.options.filename);
+            ws.on('error', (e) => {
+                console.error('[-] Crawl image error:', e.toString());
             });
-            writeStream.on('finish', () => {
-                console.log(`[+] Crawl image [${fn}] success`);
+            ws.on('finish', () => {
+                console.log(`[+] Crawl image ok ${res.options.filename}`);
             });
-            writeStream.write(res.body);
-            writeStream.end();
+            ws.write(res.body);
+            ws.end();
         }
         done();
     }
