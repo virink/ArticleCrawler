@@ -27,6 +27,9 @@ const ArticleModel = sequelize.define(`${TABLE_PREFIX}article`, {
         allowNull: false,
         unique: true
     },
+    url: {
+        type: Sequelize.STRING(255)
+    },
     title: {
         type: Sequelize.STRING(100),
         allowNull: false

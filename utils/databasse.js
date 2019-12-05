@@ -45,7 +45,7 @@ var sequelize = new Sequelize(CONFIG.name, CONFIG.user, CONFIG.pass, {
 sequelize
     .authenticate()
     .then(() => {
-        console.log('[+] Connection has been established successfully.')
+        console.log('[+] Connect database successfully.')
     })
     .catch(err => {
         console.error('[-] Unable to connect to the database')

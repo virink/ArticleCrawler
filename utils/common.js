@@ -8,6 +8,7 @@
 'use strict';
 
 const TurndownService = require('turndown')
+const fs = require('fs')
 const turndownPluginGfm = require('joplin-turndown-plugin-gfm')
 
 const turndownService = new TurndownService()
@@ -30,8 +31,20 @@ const mkdir = (path) => {
     fs.existsSync(path) || fs.mkdirSync(path);
 }
 
+const matchAll = (data, regex) => {
+    var Regex = new RegExp(regex, 'mg');
+    var matchs = data.match(Regex);
+    var results = [];
+    for (var i in matchs) {
+        let ngMatches = matchs[i].match(new RegExp(regex));
+        results.push(ngMatches);
+    }
+    return results;
+}
+
 module.exports = {
     html2md,
     date2ts,
-    mkdir
+    mkdir,
+    matchAll
 }

@@ -17,7 +17,8 @@ const Crawler = require("crawler");
 const {
     html2md,
     date2ts,
-    mkdir
+    mkdir,
+    matchAll
 } = require('../utils/common');
 const {
     imageCrawler
@@ -33,18 +34,23 @@ mkdir(dataPath)
 
 var AlreadCrawlIDS = [];
 
-imageCrawler.on('request', function (options) {
+imageCrawler.on('request', function(options) {
     // console.debug(options)
     // FIX: 修复古老文章的图片地址
     if (options.uri.indexOf('xianzhi.aliyun.com/forum/media') != -1) {
         options.uri = options.uri.replace('xianzhi.aliyun.com/forum/media', 'xzfile.aliyuncs.com/media')
     }
+
     // Proxy
-    if (options.uri.indexOf('i.imgur.com') != -1 ||
-        options.uri.indexOf('i.loli.net') != -1 ||
-        options.uri.indexOf('s2.ax1x.com') != -1) {
-        options.proxy = "http://127.0.0.1:1086";
-    }
+    options.proxy = "http://127.0.0.1:1086";
+    // if (options.uri.indexOf('i.imgur.com') != -1 ||
+    //     options.uri.indexOf('i.loli.net') != -1 ||
+    //     options.uri.indexOf('blog.notso.pro') != -1 ||
+    //     options.uri.indexOf('1.bp.blogspot.com') != -1 ||
+    //     options.uri.indexOf('raw.githubusercontent.com') != -1 ||
+    //     options.uri.indexOf('s2.ax1x.com') != -1) {
+    //     options.proxy = "http://127.0.0.1:1086";
+    // }
 });
 
 // Get Page
@@ -58,6 +64,7 @@ var crawlPage = new Crawler({
             // Get Page
             var data = {};
             data.nid = /\/t\/(\d+)/.exec(res.request.uri.path)[1]
+            data.url = res.request.uri.href
             data.title = $("span.content-title").text();
             data.author = $("span.username").text();
             data.publish = date2ts($($("span.info-left span")[2]).text());
@@ -121,7 +128,7 @@ var crawlList = new Crawler({
             var $ = res.$;
             var pageLinks = [];
             // Get Page Link
-            $("a.topic-title").each(function (i, e) {
+            $("a.topic-title").each(function(i, e) {
                 var pageLink = `${INDEX_URL}${$(e).attr("href")}`;
                 // console.debug($(e).text(), pageLink);
                 var nid = /\/t\/(\d+)/.exec(pageLink)[1]
@@ -144,36 +151,80 @@ var crawlList = new Crawler({
     }
 });
 
-const StartTask = (url = 'https://xz.aliyun.com/') => {
+const initAlreadyCrawlIDs = async () => {
     (async () => {
-        // const nids = await ArticleModel.findAll({
-        //     attributes: ['nid'],
-        //     raw: true
-        // });
-        // AlreadCrawlIDS = nids.map((e) => {
-        //     return e.nid
-        // })
+        const nids = await ArticleModel.findAll({
+            attributes: ['nid'],
+            raw: true
+        });
+        AlreadCrawlIDS = nids.map((e) => {
+            return e.nid
+        })
+    })();
+}
 
-        crawlList.queue(url)
+const StartTask = (url = 'https://xz.aliyun.com/') => {
+    console.log("[+] StartTask")
+        (async () => {
+            await initAlreadyCrawlIDs()
+            crawlList.queue(url)
+        })();
+}
+
+const StartRSSTask = (url = 'https://xz.aliyun.com/feed') => {
+    console.log("[+] StartRSSTask")
+    let Parser = require('rss-parser');
+    let parser = new Parser();
+
+    (async () => {
+        await initAlreadyCrawlIDs()
+        // TODO: Get RSS url
+        let feed = await parser.parseURL(url);
+        // Parser and Crawl
+        feed.items.forEach(item => {
+            // console.log(item.title + ':' + item.link)
+            if (AlreadCrawlIDS.indexOf(parseInt(path.basename(item.link))) == -1) {
+                // console.log(`[+] ${item.title} - ${item.link}`)
+                crawlPage.queue(item.link)
+            }
+        });
     })();
 }
 
 const FixAndDownloadImage = () => {
+    console.log("[+] FixAndDownloadImage")
+
     (async () => {
         // Get All Contents and Nid
         const articles = await ArticleModel.findAll({
             attributes: ['nid', 'content'],
             raw: true
         });
-        // articles[0]
+
+        const matchImageUrl = (nid, content) => {
+            var imageUrls = matchAll(content, /\!\[(.*?)\]\((.*?)\)/)
+            for (var i in imageUrls) {
+                let imgUrl = imageUrls[i][2]
+                if (imgUrl.indexOf('?') > 0) {
+                    imgUrl = imgUrl.split('?')[0]
+                }
+                var imgDst = path.join(dataPath, nid.toString(), path.basename(imgUrl))
+                if (!fs.existsSync(imgDst)) {
+                    // console.log(imgUrl)
+                    imageCrawler.queue({
+                        uri: imgUrl,
+                        filename: imgDst,
+                        isPic: true
+                    })
+                }
+            }
+        }
+
         // Grep image url
-        // articles.map((e) => {
-        //     var nid = e.nid;
-        //     var content = e.content;
-
-        // })
-
-        // crawlList.queue(url)
+        articles.map((e) => {
+            // console.log()
+            matchImageUrl(e.nid, e.content)
+        })
     })();
 }
 
@@ -183,14 +234,18 @@ if (require('../utils/debug').PLUGIN_DEBUG(__NAME__)) {
     // crawlPage.queue('https://xz.aliyun.com/t/6746')
     // crawlList.queue('https://xz.aliyun.com/?page=120')
 
-    StartTask('https://xz.aliyun.com/?page=1')
+    // StartTask('https://xz.aliyun.com/?page=1')
+    // FixAndDownloadImage()
     // imageCrawler.queue({
     //     uri: 'https://xzfile.aliyuncs.com/media/upload/picture/20190528114412-db4952ea-80fa-1.png',
     //     filename: path.join(dataPath, 'test', '20190528114412-db4952ea-80fa-1.png'),
     //     isPic: true
     // })
+    StartRSSTask()
 }
 
 module.exports = {
-    StartTask
+    StartTask,
+    StartRSSTask,
+    FixAndDownloadImage,
 }
