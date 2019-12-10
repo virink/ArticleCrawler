@@ -143,3 +143,5 @@ GitHub.sublime-settings
 data/*
 !data/.gitkeep
 !data/assets
+
+config.js
