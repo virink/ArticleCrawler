@@ -140,6 +140,8 @@ GitHub.sublime-settings
 
 # End of https://www.gitignore.io/api/node,sublimetext,visualstudiocode
 
+package-lock.json
+
 data/*
 !data/.gitkeep
 !data/assets
