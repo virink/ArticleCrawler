@@ -241,14 +241,14 @@ if (require('../utils/debug').PLUGIN_DEBUG(__NAME__)) {
     // crawlPage.queue('https://xz.aliyun.com/t/6746')
     // crawlList.queue('https://xz.aliyun.com/?page=120')
 
-    // StartTask('https://xz.aliyun.com/?page=1')
+    StartTask('https://xz.aliyun.com/?page=1')
     // imageCrawler.queue({
     //     uri: 'https://xzfile.aliyuncs.com/media/upload/picture/20190528114412-db4952ea-80fa-1.png',
     //     filename: path.join(dataPath, 'test', '20190528114412-db4952ea-80fa-1.png'),
     //     isPic: true
     // })
-    StartRSSTask()
-    FixAndDownloadImage()
+    // StartRSSTask()
+    // FixAndDownloadImage()
 }
 
 module.exports = {

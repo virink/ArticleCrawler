@@ -7,7 +7,19 @@
 
 // TODO: Manage Task
 
-const {
-    Sequelize,
-    sequelize
-} = require("./utils/databasse");
+const plugins = [
+    'xz.aliyun.com'
+]
+
+var pluginsHandler = {}
+
+plugins.map(plugin => {
+    console.log(plugin)
+    pluginsHandler[plugin] = require(`./plugins/${plugin}`)
+})
+
+// console.debug(pluginsHandler)
+for (var plugin in pluginsHandler) {
+    console.log(`[+] ${plugin}`)
+    pluginsHandler[plugin].StartRSSTask()
+}
