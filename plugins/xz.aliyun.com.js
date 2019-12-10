@@ -35,6 +35,10 @@ mkdir(dataPath)
 var AlreadCrawlIDS = [];
 
 imageCrawler.on('request', function(options) {
+    try {
+        options.uri = new URL(options.uri).href
+    } catch (e) {}
+
     // console.debug(options)
     // FIX: 修复古老文章的图片地址
     if (options.uri.indexOf('xianzhi.aliyun.com/forum/media') != -1) {
@@ -42,7 +46,7 @@ imageCrawler.on('request', function(options) {
     }
 
     // Proxy
-    options.proxy = "http://127.0.0.1:1086";
+    // options.proxy = "http://127.0.0.1:1086";
     // if (options.uri.indexOf('i.imgur.com') != -1 ||
     //     options.uri.indexOf('i.loli.net') != -1 ||
     //     options.uri.indexOf('blog.notso.pro') != -1 ||
@@ -81,6 +85,9 @@ var crawlPage = new Crawler({
                     if (src) {
                         if (src.indexOf('?') > 0) {
                             src = src.split('?')[0]
+                        }
+                        if (src.indexOf('#') > 0) {
+                            src = src.split('#')[0]
                         }
                         var name = path.basename(src)
                         var imgDst = path.join(dataPath, data.nid, name)
@@ -192,7 +199,7 @@ const StartRSSTask = (url = 'https://xz.aliyun.com/feed') => {
 }
 
 const FixAndDownloadImage = () => {
-    console.log("[+] FixAndDownloadImage")
+    console.log("[+] FixAndDownloadImage");
 
     (async () => {
         // Get All Contents and Nid
@@ -200,7 +207,6 @@ const FixAndDownloadImage = () => {
             attributes: ['nid', 'content'],
             raw: true
         });
-
         const matchImageUrl = (nid, content) => {
             var imageUrls = matchAll(content, /\!\[(.*?)\]\((.*?)\)/)
             for (var i in imageUrls) {
@@ -208,9 +214,11 @@ const FixAndDownloadImage = () => {
                 if (imgUrl.indexOf('?') > 0) {
                     imgUrl = imgUrl.split('?')[0]
                 }
+                if (imgUrl.indexOf('#') > 0) {
+                    imgUrl = imgUrl.split('#')[0]
+                }
                 var imgDst = path.join(dataPath, nid.toString(), path.basename(imgUrl))
                 if (!fs.existsSync(imgDst)) {
-                    // console.log(imgUrl)
                     imageCrawler.queue({
                         uri: imgUrl,
                         filename: imgDst,
@@ -219,7 +227,6 @@ const FixAndDownloadImage = () => {
                 }
             }
         }
-
         // Grep image url
         articles.map((e) => {
             // console.log()
@@ -235,13 +242,13 @@ if (require('../utils/debug').PLUGIN_DEBUG(__NAME__)) {
     // crawlList.queue('https://xz.aliyun.com/?page=120')
 
     // StartTask('https://xz.aliyun.com/?page=1')
-    // FixAndDownloadImage()
     // imageCrawler.queue({
     //     uri: 'https://xzfile.aliyuncs.com/media/upload/picture/20190528114412-db4952ea-80fa-1.png',
     //     filename: path.join(dataPath, 'test', '20190528114412-db4952ea-80fa-1.png'),
     //     isPic: true
     // })
     StartRSSTask()
+    FixAndDownloadImage()
 }
 
 module.exports = {
