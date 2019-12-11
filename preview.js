@@ -1,5 +1,11 @@
-const path = require('path')
+/**
+ * ArticleCrawler - A crawler for lots of articles
+ * Author: Virink < virink @outlook.com >
+ * Create: 2019-11-22
+ * Update: 2019-12-11
+ */
 
+const path = require('path')
 const Koa = require('koa');
 const Static = require('koa-static-prefix');
 const Views = require('koa-views')
@@ -23,27 +29,42 @@ app.use(Views(path.join(__dirname, './view'), {
     extension: 'ejs'
 }))
 
+const sites = [{
+    site: 'xz.aliyun.com',
+    title: '先知社区'
+}, {
+    site: 'www.freebuf.com',
+    title: 'FreeBuf互联网安全新媒体平台'
+}]
+
 // Index - Site List
 router.get('/', async (ctx, next) => {
     await ctx.render('index', {
         title: '文章镜像',
-        sites: [{
-            site: 'xz.aliyun.com',
-            title: '先知社区'
-        }]
+        sites: sites
     })
 })
 // Site - Article List
 router.get('/:site', async (ctx, next) => {
     var site = ctx.params.site
-    if (site == 'xz.aliyun.com') {
-        const xz = require(`./plugins/${site}.model`)
-        const nids = await xz.ArticleModel.findAll({
+    var title = ''
+    sites.map(e => {
+        if (e.site === site) {
+            title = e.site;
+        }
+    });
+    if (title.length > 0) {
+        const model = require(`./plugins/${site}.model`)
+        const nids = await model.ArticleModel.findAll({
             attributes: ['nid', 'title'],
+            order: [
+                ['id', 'DESC']
+            ],
             raw: true
         });
         await ctx.render('site', {
-            title: '先知社区',
+            site: site,
+            title: title,
             articles: nids
         })
     } else {
@@ -54,21 +75,29 @@ router.get('/:site', async (ctx, next) => {
 router.get('/:site/:nid', async (ctx, next) => {
     var site = ctx.params.site
     var nid = ctx.params.nid
-    if (site == 'xz.aliyun.com') {
-        const xz = require(`./plugins/${site}.model`)
-        var article = await xz.ArticleModel.findOne({
+    var title = ''
+    sites.map(e => {
+        if (e.site === site) {
+            title = e.site;
+        }
+    });
+    if (title.length > 0) {
+        const model = require(`./plugins/${site}.model`)
+        const article = await model.ArticleModel.findOne({
             where: {
                 nid: nid
             },
             raw: true
         });
-        // https://xzfile.aliyuncs.com/media/upload/picture
-        // var article = articleRes.toArray()
-        // article.content = article.content.replace(src, path.join('/data/xz.aliyun.com', article.nid, name))
-        article.content = article.content.replace(new RegExp('https://xzfile.aliyuncs.com/media/upload/picture', 'g'), path.join('/data/xz.aliyun.com', article.nid.toString()));
-        // article.content = article.content.replace('/https://xzfile.aliyuncs.com/media/upload/picture/g', path.join('/data/xz.aliyun.com', article.nid.toString()))
+        if (site == 'xz.aliyun.com') {
+            article.content = article.content.replace(new RegExp('https://xzfile.aliyuncs.com/media/upload/picture', 'g'), path.join('/data/xz.aliyun.com', article.nid.toString()));
+        } else if (site == 'www.freebuf.com') {
+            // FIX IMAGE
+            article.content = article.content.replace(new RegExp('![](https://www.freebuf.com/buf/themes/freebuf/images/grey.gif)', 'g'), '');
+            // article.content = article.content.replace(new RegExp('&lt;img src=&#34;https://image.3001.net/images/20191113/1573608386\_5dcb5bc279843.png!small&#34;&gt;&lt;p&gt;&lt;/p&gt;', 'g'), path.join('/data/xz.aliyun.com', article.nid.toString()));
+        }
         await ctx.render('article', {
-            title: '先知社区',
+            title: title,
             article: article
         })
     } else {
@@ -79,6 +108,6 @@ router.get('/:site/:nid', async (ctx, next) => {
 app.use(router.routes(), router.allowedMethods())
 
 
-app.listen(3000, () => {
-    console.log(`Listen on http://127.0.0.1:3000/`)
+app.listen(23000, () => {
+    console.log(`Listen on http://127.0.0.1:23000/`)
 });

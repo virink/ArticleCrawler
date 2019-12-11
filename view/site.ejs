@@ -22,7 +22,7 @@
                 <ul class="pure-menu-list">
                     <% articles.forEach(function(article){%>
                     <li class="pure-menu-item">
-                        <a href="/xz.aliyun.com/<%=article.nid %>" class="pure-menu-link"><%=article.title %></a>
+                        <a href="/<%= site %>/<%=article.nid %>" class="pure-menu-link"><%=article.title %></a>
                     </li>
                     <% }) %>
                 </ul>
